@@ -492,6 +492,17 @@ func createImageRequestBody(c *gin.Context, cookie string, openAIReq *model.Open
 
 	logger.Debug(c.Request.Context(), fmt.Sprintf("RequestBody: %v", requestBody))
 
+	// 检查是否已经有可用的RecaptchaToken
+	if len(config.RecaptchaTokenList) > 0 {
+		// 取出列表中的第一个token并使用
+		token := config.RecaptchaTokenList[0]
+		// 移除已使用的token
+		config.RecaptchaTokenList = config.RecaptchaTokenList[1:]
+		logger.Debugf(c.Request.Context(), fmt.Sprintf("使用已存储的g_recaptcha_token: %v\n", token))
+		requestBody["g_recaptcha_token"] = token
+		return requestBody, nil
+	}
+
 	if strings.TrimSpace(config.RecaptchaProxyUrl) == "" ||
 		(!strings.HasPrefix(config.RecaptchaProxyUrl, "http://") &&
 			!strings.HasPrefix(config.RecaptchaProxyUrl, "https://")) {
@@ -551,6 +562,24 @@ func createImageRequestBody(c *gin.Context, cookie string, openAIReq *model.Open
 				logger.Debugf(c.Request.Context(), fmt.Sprintf("g_recaptcha_token: %v\n", response.Token))
 				requestBody["g_recaptcha_token"] = response.Token
 				logger.Infof(c.Request.Context(), fmt.Sprintf("cheat success!"))
+
+				// 如果requestBody中包含g_recaptcha_token，保存到RecaptchaTokenList中
+				if token, ok := requestBody["g_recaptcha_token"].(string); ok && token != "" {
+					// 避免重复添加相同的token
+					tokenExists := false
+					for _, existingToken := range config.RecaptchaTokenList {
+						if existingToken == token {
+							tokenExists = true
+							break
+						}
+					}
+
+					if !tokenExists {
+						logger.Debugf(c.Request.Context(), "保存g_recaptcha_token到列表中")
+						config.RecaptchaTokenList = append(config.RecaptchaTokenList, token)
+					}
+				}
+
 				return requestBody, nil
 			} else {
 				logger.Errorf(c.Request.Context(), fmt.Sprintf("读取/genspark token 失败   %v\n", err))
@@ -982,6 +1011,17 @@ func handleStreamRequest(c *gin.Context, client cycletls.CycleTLS, cookie string
 }
 
 func cheat(requestBody map[string]interface{}, c *gin.Context, cookie string) (map[string]interface{}, error) {
+	// 检查是否已经有可用的RecaptchaToken
+	if len(config.RecaptchaTokenList) > 0 {
+		// 取出列表中的第一个token并使用
+		token := config.RecaptchaTokenList[0]
+		// 移除已使用的token
+		config.RecaptchaTokenList = config.RecaptchaTokenList[1:]
+		logger.Debugf(c.Request.Context(), fmt.Sprintf("使用已存储的g_recaptcha_token: %v\n", token))
+		requestBody["g_recaptcha_token"] = token
+		return requestBody, nil
+	}
+
 	if strings.TrimSpace(config.RecaptchaProxyUrl) == "" ||
 		(!strings.HasPrefix(config.RecaptchaProxyUrl, "http://") &&
 			!strings.HasPrefix(config.RecaptchaProxyUrl, "https://")) {
@@ -1041,6 +1081,24 @@ func cheat(requestBody map[string]interface{}, c *gin.Context, cookie string) (m
 				logger.Debugf(c.Request.Context(), fmt.Sprintf("g_recaptcha_token: %v\n", response.Token))
 				requestBody["g_recaptcha_token"] = response.Token
 				logger.Infof(c.Request.Context(), fmt.Sprintf("cheat success!"))
+
+				// 如果获取到了token，保存到RecaptchaTokenList中
+				if token, ok := requestBody["g_recaptcha_token"].(string); ok && token != "" {
+					// 避免重复添加相同的token
+					tokenExists := false
+					for _, existingToken := range config.RecaptchaTokenList {
+						if existingToken == token {
+							tokenExists = true
+							break
+						}
+					}
+
+					if !tokenExists {
+						logger.Debugf(c.Request.Context(), "保存g_recaptcha_token到列表中")
+						config.RecaptchaTokenList = append(config.RecaptchaTokenList, token)
+					}
+				}
+
 				return requestBody, nil
 			} else {
 				logger.Errorf(c.Request.Context(), fmt.Sprintf("读取/genspark token 失败,查看 playwright-proxy log"))
