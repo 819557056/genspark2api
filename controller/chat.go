@@ -497,7 +497,7 @@ func createImageRequestBody(c *gin.Context, cookie string, openAIReq *model.Open
 		// 取出列表中的第一个token并使用
 		token := config.RecaptchaTokenList[0]
 		// 移除已使用的token
-		config.RecaptchaTokenList = config.RecaptchaTokenList[1:]
+		//config.RecaptchaTokenList = config.RecaptchaTokenList[1:]
 		logger.Debugf(c.Request.Context(), fmt.Sprintf("使用已存储的g_recaptcha_token: %v\n", token))
 		requestBody["g_recaptcha_token"] = token
 		return requestBody, nil
@@ -1016,7 +1016,7 @@ func cheat(requestBody map[string]interface{}, c *gin.Context, cookie string) (m
 		// 取出列表中的第一个token并使用
 		token := config.RecaptchaTokenList[0]
 		// 移除已使用的token
-		config.RecaptchaTokenList = config.RecaptchaTokenList[1:]
+		//config.RecaptchaTokenList = config.RecaptchaTokenList[1:]
 		logger.Debugf(c.Request.Context(), fmt.Sprintf("使用已存储的g_recaptcha_token: %v\n", token))
 		requestBody["g_recaptcha_token"] = token
 		return requestBody, nil
